@@ -15,5 +15,6 @@ Clone the project and create a virtual environment with all the dependencies.
     pip install -r requirements.txt
 
 ## Run main_train.py 
+    source activate.sh
     python3 style_transfer/application/main_train.py
 
