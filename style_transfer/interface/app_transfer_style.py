@@ -9,9 +9,9 @@ class TransferStyleApp:
     model : BaseStyleTransferModel
     def RUN(self):
         self._head()
-        submition, text_submission = self._text_placeholder()
+        submit, text_submission = self._text_placeholder()
         self._display_prediction()
-        if submition : 
+        if submit : 
             prediction = self.model.predict(text_submission)
             self._display_prediction(prediction)
 
