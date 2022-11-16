@@ -15,6 +15,8 @@ Clone the project and create a virtual environment with all the dependencies.
     pip install -r requirements.txt
 
 ## Run main_train.py 
-    source activate.sh
+    . activate.sh
     python3 style_transfer/application/main_train.py
-
+## Run Application : 
+    . activate.sh
+    streamlit run style_transfer/application/main_inference.py 
