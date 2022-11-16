@@ -38,7 +38,7 @@ class TransferStyleApp:
         Skye, creo que esto está listo. vale. 
         Yo qué coño sé. no puedo... a veces me ha pasado
         '''
-        text_submission = st.text_area('Text on wich we transfer style', placeholder = LAM,height=150,help="Write here your Latino Spanish text, and we will transform it into European Spanish style!!")
+        text_submission = st.text_area('Text on which we transfer style', placeholder = LAM,height=150,help="Write here your Latino Spanish text, and we will transform it into European Spanish style! ¡Venga!")
         submit = st.button('Submit')
         return submit,text_submission
     @staticmethod
