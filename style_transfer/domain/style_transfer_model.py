@@ -20,7 +20,7 @@ class BaseStyleTransferModel:
     
     def predict(self, X: pd.DataFrame):
         """Return predictions."""
-        pass
+        return f"This is the prediction {X}"
 
     @classmethod
     def load(cls) -> Boolean:
