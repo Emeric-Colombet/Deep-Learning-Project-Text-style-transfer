@@ -97,7 +97,7 @@ class SubtitleDataSrt:
         df['region'] = np.where(df['file'].str.contains('(Latin America)'), 'latinamerica', 'spain')
         df['title'] = df['file'].str.split('.S0', expand=True)[0]
         df['episode'] = df.apply(
-            lambda x: x['file'][x['file'].find('.S0') + 1:x['file'].find('.S0') + 1 + len('S00E00')], axis=1)
+            lambda x: x['file'][x['file'].find('.S0') + 1:x['file'].find('.S0') + len('S00E00') + 1], axis=1)
         df['title_episode'] = df['title'] + '-' + df['episode']
 
         df.sort_values(by=['title', 'episode', 'region'], inplace=True, ignore_index=True)
