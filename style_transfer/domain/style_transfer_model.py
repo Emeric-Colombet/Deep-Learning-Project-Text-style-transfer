@@ -19,8 +19,9 @@ class BaseStyleTransferModel:
 
     
     def predict(self, X: pd.DataFrame):
-        """Return predictions."""
-        pass
+        """Return predictions. This first definition is for app testing only, 
+        be carreful using this function with a real dataframe. """
+        return f"This is the prediction {X}"
 
     @classmethod
     def load(cls) -> Boolean:
