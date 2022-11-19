@@ -4,8 +4,10 @@ from dataclasses import dataclass
 import pandas as pd
 import numpy as np
 import pysrt
+import webvtt
 import datetime
 import math
+import re
 import os
 
 
@@ -32,9 +34,9 @@ class StyleTransferData:
             title: Title of show or movie
             episode: Episode number of show, "It's a movie" for films
         """
-
+        df = pd.DataFrame
         df_srt = SubtitleDataSrt.load_raw_data_srt()
-        df_vtt = SubtitleDataSrt.load_raw_data_srt()  # placeholder for load_raw_data_vtt()
+        df_vtt = SubtitleDataVtt.load_raw_data_vtt()  # placeholder for load_raw_data_vtt()
         df_all = pd.concat([df_srt, df_vtt], ignore_index=True)
 
         return df_all
@@ -364,3 +366,227 @@ class SubtitleDataSrt:
                 encoding_errors.append(title + '-' + episode)
 
         return subtitles_all_titles
+
+class SubtitleDataVtt:
+
+    def __init__(self, df:pd.DataFrame):
+        self.df = df
+
+    @staticmethod
+    def _get_vtt_path() -> str:
+        """
+        Obtain path holding VTT files
+
+        :returns:
+            path: path holding VTT files
+        """
+
+        PATH_RELATIVE = '../../data/raw/vtt'
+        path = os.path.abspath(PATH_RELATIVE)
+
+        return path
+
+    def get_subtitle_files_vtt(self) -> pd.DataFrame:
+        """
+        Obtain dataframe with list of available subtitle files
+
+        :returns:
+            df: DataFrame with subtitle file names
+        """
+        
+        path = SubtitleDataVtt._get_vtt_path()
+        df = pd.DataFrame (os.listdir(path), columns = ['file'])
+        df['title'] = np.where(df['file'].str.contains('S0'), df['file'].str.split('.S0', expand=True)[0], df['file'].str.split('.WEBRip', expand=True)[0] )
+        df['region'] = np.where(df['file'].str.contains('es-ES'), 'Spain', 'Latin America')
+        df['episode'] = np.where(df['file'].str.contains(r"\bS0."), df.apply(lambda x: x['file'][x['file'].find('.S0')+1:x['file'].find('.S0')+ len('S00E00') + 1],axis=1), "It's a movie")
+        df['title_episode'] = np.where(df['file'].str.contains(r"\bS0."), df['title'] + '-' + df['episode'], df['title']) 
+    
+        df.sort_values(by=['title','episode','region'], inplace=True, ignore_index=True)
+
+        self.df = df
+        return self.df
+
+    def get_equivalent_files(self) -> pd.DataFrame:
+        """Obtain equivalent subtitle files
+
+        :returns:
+            df_equivalent: DataFrame per title/episode showing equivalent subtitle files
+        """
+
+        SEPARATOR = '<><><>'  # Pattern that might not exist in file name already
+        ORIGINAL_REGION = 'latinamerica'
+        TARGET_REGION = 'spain'
+
+        df = self.get_subtitle_files_vtt()
+
+        # OPTIMIZE: Only works when data is sorted and Latin America row is before Spain row
+        df_equivalent = df.groupby(['title', 'episode'], as_index=False).agg({'file': SEPARATOR.join})
+
+        df_equivalent['file_' + ORIGINAL_REGION] = df_equivalent['file'].str.split(SEPARATOR, expand=True)[0]
+        df_equivalent['file_' + TARGET_REGION] = df_equivalent['file'].str.split(SEPARATOR, expand=True)[1]
+        df_equivalent.drop(['file'], axis=1, inplace=True)
+
+        return df_equivalent
+
+    def _get_title_index(self, title: str, episode: str) -> int:
+        """
+        Get the index of title-episode
+
+        :parameters:
+            title: title of show or film
+            episode: episode of show or "It's a movie" if film
+        :returns:
+            index: Index of title-episode in DataFrame
+        """
+
+        index = np.where((self.df['title'] == title) & (self.df['episode'] == episode))[0][0]
+
+        return index
+
+    def get_title_info(self, index: int) -> (str, str):
+        """
+        Get title and episode of a given index
+
+        :parameters:
+            index: Index of title-episode in DataFrame
+        :returns:
+            title: Title of show or film of a specific DataFrame index
+            episode: Episode of show or film of a specific DataFrame index
+        """
+
+        title = self.df['title'][index]
+        episode = self.df['episode'][index]
+
+        return title, episode
+
+    
+    def _get_title_path_vtt(self, index: int, region: str) -> str:
+        """
+        Get path of subtitle file (for a specific title-episode and region)
+
+        :parameters:
+            index: Index of title-episode in DataFrame
+            region: region of subtitle file
+        :returns:
+            full_path: Path to subtitle file (for a specific title-episode and region)
+        """
+        path = SubtitleDataVtt._get_vtt_path()
+        region_field = 'file_' + region
+        file = self.df[region_field][index]
+        full_path = os.path.join(path, file)
+
+        return full_path
+
+    @staticmethod
+    def _get_subtitles_vtt(path:str) -> pd.DataFrame:
+        """
+        Get subtitles from an VTT file
+
+        :parameters:
+            path: Path to subtitle file
+        :returns:
+            df: Dataframe with subtitle content for a given title-episode-region
+        """
+        subs_vtt = webvtt.read(path)
+        liste_subs = [(caption.start, caption.end, caption.text) for caption in subs_vtt]
+        df = pd.DataFrame(liste_subs, columns = ["start", "end", "text"])
+        df["start"] = [e[:-4] for e in df["start"]]
+        df["end"] = [e[:-4] for e in df["end"]]
+        df["start"] = [datetime.datetime.strptime(e, '%H:%M:%S').time() for e in df["start"]]
+        df["end"] = [datetime.datetime.strptime(e, '%H:%M:%S').time() for e in df["end"]]
+
+        return df
+
+    @staticmethod
+    def _add_time_grouping_to_subtitles_vtt(df: pd.DataFrame, seconds_range=5):
+        """
+        Adds a time range grouping to subtitle data
+
+        :parameters:
+            df: DataFrame with subtitle content for a given title-episode-region
+            seconds_range: Time range in seconds, default is 5
+        :returns:
+            df_range: Dataframe with subtitles grouped by specific tranches of time
+        """    
+        start_time_range = [datetime.time(e.hour, e.minute, round(math.floor(e.second / seconds_range)) * seconds_range, 0) for e in df["start"]]
+        df['start_time_range'] = pd.Series(start_time_range)
+    
+        df_range = df.groupby(['start_time_range'], as_index = False).agg({'text': ' '.join}) 
+    
+        return df_range
+    
+    def _get_grouped_subtitles_vtt(self, index, region) -> pd.DataFrame:
+        """
+        Group subtitles within a time range
+
+        :parameters:
+            seconds_range: Time range in seconds, default is 5
+        :returns:
+            df_range: Dataframe with subtitles grouped by specific tranches of time
+        """
+        path = self._get_title_path_vtt(index, region)
+        df = SubtitleDataVtt._get_subtitles_vtt(path)
+        df_range = SubtitleDataVtt._add_time_grouping_to_subtitles_vtt(df, seconds_range=5)
+
+        return df_range
+
+    def get_subtitle_equivalents_vtt(self, index: int) -> pd.DataFrame:
+        """
+        Provides side-by-side comparison of regional subtitle content, for a given title-episode
+
+        :parameters:
+            index: Index of title-episode in DataFrame containing subtitle file equivalences
+        :returns:
+            df_comparison: Dataframe with subtitles comparison per specific tranches of time
+        """
+
+        ORIGINAL_REGION = 'latinamerica'
+        TARGET_REGION = 'spain'
+
+        df_original = self._get_grouped_subtitles_vtt(index, ORIGINAL_REGION)
+        df_target = self._get_grouped_subtitles_vtt(index, TARGET_REGION)
+
+        title, episode = self.get_title_info(index)
+
+        df_comparison = pd.merge(
+            df_original,
+            df_target,
+            on='start_time_range',
+            suffixes=('_' + ORIGINAL_REGION, '_' + TARGET_REGION)
+        )
+
+        df_comparison['title'] = title
+        df_comparison['episode'] = episode
+
+        return df_comparison
+
+
+    @staticmethod
+    def load_raw_data_vtt() -> pd.DataFrame:
+        """
+        Concatenate all subtitles from VTT files in a single DataFrame
+
+        :returns:
+            subtitles_all_titles: DataFrame with subtitles for various titles-episodes-regions
+        """
+        df = pd.DataFrame()
+        files = SubtitleDataVtt.get_subtitle_files_vtt(df)
+        files_equivalent = SubtitleDataVtt(files).get_equivalent_files()
+
+        nb_subtitle_pairs = len(files_equivalent)
+        subtitles_all_titles = pd.DataFrame()
+        encoding_errors = []
+
+        for i in range(nb_subtitle_pairs):
+            try:
+                df = SubtitleDataVtt(files_equivalent).get_subtitle_equivalents_vtt(i)
+                subtitles_all_titles = pd.concat([subtitles_all_titles, df], ignore_index=True)
+
+            except UnicodeDecodeError:
+                # Files that could not be accessed due to encoding issues:
+                # Not be used but keep the info if necessary for debugging purposes
+                title, episode = SubtitleDataVtt(files_equivalent).get_title_info(i)
+                encoding_errors.append(title + '-' + episode)
+
+        return subtitles_all_titles
+ 

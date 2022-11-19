@@ -6,3 +6,4 @@ data_path = os.path.abspath(DATA_PATH_RELATIVE)
 
 df_all = StyleTransferData().load_clean_data()
 StyleTransferData.print_to_csv(df_all, data_path, 'all_subtitles.csv')
+
