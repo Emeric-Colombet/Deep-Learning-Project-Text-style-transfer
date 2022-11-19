@@ -399,7 +399,7 @@ class SubtitleDataVtt:
         df['title'] = np.where(df['file'].str.contains('S0'), df['file'].str.split('.S0', expand=True)[0], df['file'].str.split('.WEBRip', expand=True)[0] )
         df['region'] = np.where(df['file'].str.contains('es-ES'), 'Spain', 'Latin America')
         df['episode'] = np.where(df['file'].str.contains(r"\bS0."), df.apply(lambda x: x['file'][x['file'].find('.S0')+1:x['file'].find('.S0')+ len('S00E00') + 1],axis=1), "It's a movie")
-        df['title_episode'] = np.where(df['file'].str.contains(r"\bS0."), df['title'] + '-' + df['episode'], "It's a movie") 
+        df['title_episode'] = np.where(df['file'].str.contains(r"\bS0."), df['title'] + '-' + df['episode'], df['title']) 
     
         df.sort_values(by=['title','episode','region'], inplace=True, ignore_index=True)
 
