@@ -125,11 +125,7 @@ class BaseData:
 
         self.df = df
 
-    def split_train_test(self):
-
-        TEST_SIZE = 0.15
-        VALIDATION_SIZE = 0.20
-        RANDOM_STATE = 42
+    def split_train_test(self, test_size=0.15, validation_size=0.20, random_state=42):
 
         COLUMNS_TO_DROP = ['start_time_range', 'title', 'episode', 'terms_spain_nb', 'terms_spain_flag']
         COLUMNS_TO_DROP_LAST = ['title_terms']
@@ -149,13 +145,13 @@ class BaseData:
 
         # Split Test vs (Train/Validation) sets
         y = df['title_terms']
-        stratified_split = StratifiedShuffleSplit(test_size=TEST_SIZE, random_state=RANDOM_STATE)
+        stratified_split = StratifiedShuffleSplit(test_size=test_size, random_state=random_state)
         for train_index, test_index in stratified_split.split(df, y):
             df_train_val, df_test = df.iloc[train_index].copy(), df.iloc[test_index].copy()
 
         # Split Train vs Validation sets
         y_train_val = df_train_val['title_terms']
-        stratified_split = StratifiedShuffleSplit(test_size=VALIDATION_SIZE, random_state=RANDOM_STATE)
+        stratified_split = StratifiedShuffleSplit(test_size=validation_size, random_state=random_state)
         for train_index, test_index in stratified_split.split(df_train_val, y_train_val):
             df_train, df_validation = df_train_val.iloc[train_index].copy(), df_train_val.iloc[test_index].copy()
 
