@@ -1,4 +1,7 @@
 /data/raw
 /venv/
+.DS_Store
+
+# Stephanie test files
 test_sd.py
 /exploration
