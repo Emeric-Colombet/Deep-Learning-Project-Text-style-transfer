@@ -68,7 +68,7 @@ class EuropeanSpanishTerms:
 
             # Pronouns
             r'\bguarra\b', r'\bgilipolla', r'\bbuenorra\b', r'\bputa\b', r'\bzorra\b', r'\bnena\b',
-            r'\btí[a,o][s]{0,1}\b', r'\bchaval', r'\bcotill', r'\bcrack\b', r'\bcapullo', r'\bcrack',
+            r'\btí[a,o][s]{0,1}\b', r'\bchaval', r'\bcotill', r'\bcapullo', r'\bcrack',
 
             # Nouns
             r'\bmóvil', r'\bcoche', r'\baparca', r'\bcamarer', r'\bcaña', r'\bpiso', r'\bpolla',
