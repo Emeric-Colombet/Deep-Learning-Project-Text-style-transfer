@@ -13,7 +13,7 @@ import os
 
 @dataclass
 class MyRepo:
-    repo: str = git.Repo('../domain', search_parent_directories=True).working_tree_dir
+    repo: str = git.Repo('.', search_parent_directories=True).working_tree_dir
 
     @classmethod
     def find_path(cls, target_folder):

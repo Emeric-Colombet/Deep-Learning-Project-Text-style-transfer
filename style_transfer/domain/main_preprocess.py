@@ -1,4 +1,4 @@
-from style_transfer.infrastructure.style_transfer_data import StyleTransferData, Subtitles
+from style_transfer.infrastructure.style_transfer_data import StyleTransferData
 from style_transfer.domain.preprocess_data import EuropeanSpanishTerms, BaseData
 
 df = StyleTransferData.data

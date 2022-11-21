@@ -136,10 +136,12 @@ class BaseData:
 
         df = EuropeanSpanishTerms(self.df).count_regional_terms()
 
-        # "y-label" based on title and whether European Spanish terms were part of the target phrase
-        # in order to have test/train sets that have a similar distribution of shows/films (balanced way of speaking)
-        # and to have a similar amount of phrases where we are sure to have a regional difference between texts
-        # the "y-label" is not used for prediction necessarily but helps us distribute the data across data sets
+        """
+        "y-label" based on title and whether European Spanish terms were part of the target phrase
+        in order to have test/train sets that have a similar distribution of shows/films (balanced way of speaking)
+        and to have a similar amount of phrases where we are sure to have a regional difference between texts
+        the "y-label" is not used for prediction necessarily but helps us distribute the data across data sets
+        """
         df['title_terms'] = self.df['title'] + '-' + self.df['terms_spain_flag'].astype('string')
 
         df = df.drop(COLUMNS_TO_DROP, axis=1)
