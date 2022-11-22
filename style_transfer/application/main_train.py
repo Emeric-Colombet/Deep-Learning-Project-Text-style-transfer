@@ -12,6 +12,6 @@ df_train, df_validation, df_test = BaseData(df).split_train_test(test_size=0.15,
 df_train["combined"] = '<s>' + df_train["text_latinamerica"] + '</s>' + '>>>>' + '<p>' + df_train["text_spain"] + '</p>'
 df_validation["combined"] = '<s>' + df_validation["text_latinamerica"] + '</s>' + '>>>>' + '<p>' + df_validation["text_spain"] + '</p>'
 logging.info("Data loaded")
-gpt = TransformerStyleTransferModel(1,model_name="Latino_to_European",tokenizer_name='flax-community/gpt-2-spanish',batch_size=8,cache_dir='cache',output_dir='Latino_to_European')
+gpt = TransformerStyleTransferModel(1,model_name="Latino_to_European",tokenizer_name='DeepESP/gpt2-spanish',batch_size=8,cache_dir='cache',output_dir='Latino_to_European')
 gpt.fit(df_train,df_validation)
 logging.info("Model fitted")
