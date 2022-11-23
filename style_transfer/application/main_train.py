@@ -15,7 +15,7 @@ df_train, df_validation, df_test = BaseData(df).split_train_test(
     test_size=0.15,
     validation_size=0.2,
     random_state=42,
-    text_type='joined'
+    text_type='combined'
     )
 
 logging.info("Data loaded")

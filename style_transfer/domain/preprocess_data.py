@@ -126,16 +126,37 @@ class BaseData:
 
     @classmethod
     def _format_df_for_model(cls, df: pd.DataFrame, text_type=None) -> pd.DataFrame:
-        if text_type == 'joined':
+        """Combines original and target texts if model input needs it to be that way
+
+        :parameters:
+            df: DataFrame containing original and target texts
+
+        :returns:
+            text_type: 'combined' or None, states whether the texts should be combined or not
+        """
+        if text_type == 'combined':
 
             df['combined'] = '<s>' + df['text_latinamerica'] + '</s>' + \
-                                            '>>>>' + \
-                                            '<p>' + df['text_spain'] + '</p>'
+                             '>>>>' + \
+                             '<p>' + df['text_spain'] + '</p>'
             df.drop(columns=['text_latinamerica', 'text_spain'], inplace=True)
 
         return df
 
     def split_train_test(self, test_size=0.15, validation_size=0.20, random_state=42, text_type=None):
+        """Splits DataFrame into different train, validation and test subsets
+
+        :parameters:
+            test_size: Size of test data out of test and train+validation sets, 15% by default
+            validation_size: Size of validation data out of validation and train sets (excluding test), 20% by default
+            random_state: Seed for random state, 42 by default
+            text_type: 'combined' or None, states whether the texts should be combined or not
+
+        :returns:
+            df_train: Dataframe to be used to train model
+            df_validation: Dataframe to be used for validation
+            df_test: Dataframe to be used for test
+        """
 
         COLUMNS_TO_DROP = ['start_time_range', 'title', 'episode', 'terms_spain_nb', 'terms_spain_flag']
         COLUMNS_TO_DROP_LAST = ['title_terms']
