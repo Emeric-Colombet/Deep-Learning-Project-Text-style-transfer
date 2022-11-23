@@ -2,14 +2,8 @@ pandas==1.5.1
 scikit-learn==1.1.3
 numpy==1.23.4
 pysrt==1.1.2
-pip==22.3
-wheel==0.37.1
-pytz==2022.6
-setuptools==65.5.0
-scipy==1.9.3
-joblib==1.2.0
-python-dateutil==2.8.2
-threadpoolctl==3.1.0
-six==1.16.0
+transformers==4.24.0 
+datasets==2.7.0
+evaluate==0.3.0
 streamlit
 webvtt-py
