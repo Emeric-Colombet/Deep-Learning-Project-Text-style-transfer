@@ -1,7 +1,6 @@
 """This module loads the preprocessing object """
 from sklearn.model_selection import StratifiedShuffleSplit
 
-from style_transfer.infrastructure.style_transfer_data import StyleTransferData
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -125,20 +124,56 @@ class BaseData:
 
         self.df = df
 
-    def split_train_test(self, test_size=0.15, validation_size=0.20, random_state=42):
+    @classmethod
+    def _format_df_for_model(cls, df: pd.DataFrame, text_type=None) -> pd.DataFrame:
+        """Combines original and target texts if model input needs it to be that way
+
+        :parameters:
+            df: DataFrame containing original and target texts
+
+        :returns:
+            text_type: 'combined' or None, states whether the texts should be combined or not
+        """
+        if text_type == 'combined':
+
+            df['combined'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+                             '>>>>' + \
+                             '<p>' + df['text_spain'] + '</p>'
+
+            df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+                                         '>>>>' + \
+                                         '<p>'
+
+        return df
+
+    def split_train_test(self, test_size=0.15, validation_size=0.20, random_state=42, text_type=None):
+        """Splits DataFrame into different train, validation and test subsets
+
+        :parameters:
+            test_size: Size of test data out of test and train+validation sets, 15% by default
+            validation_size: Size of validation data out of validation and train sets (excluding test), 20% by default
+            random_state: Seed for random state, 42 by default
+            text_type: 'combined' or None, states whether the texts should be combined or not
+
+        :returns:
+            df_train: Dataframe to be used to train model
+            df_validation: Dataframe to be used for validation
+            df_test: Dataframe to be used for test
+        """
 
         COLUMNS_TO_DROP = ['start_time_range', 'title', 'episode', 'terms_spain_nb', 'terms_spain_flag']
         COLUMNS_TO_DROP_LAST = ['title_terms']
 
         df = EuropeanSpanishTerms(self.df).count_regional_terms()
+        df = self._format_df_for_model(df, text_type=text_type)
 
         """
-        "y-label" based on title and whether European Spanish terms were part of the target phrase
+        "y-label" based on title AND whether European Spanish terms were part of the target phrase
         in order to have test/train sets that have a similar distribution of shows/films (balanced way of speaking)
         and to have a similar amount of phrases where we are sure to have a regional difference between texts
         the "y-label" is not used for prediction necessarily but helps us distribute the data across data sets
         """
-        df['title_terms'] = self.df['title'] + '-' + self.df['terms_spain_flag'].astype('string')
+        df['title_terms'] = df['title'] + '-' + df['terms_spain_flag'].astype('string')
 
         df = df.drop(COLUMNS_TO_DROP, axis=1)
         df = df.drop_duplicates()
