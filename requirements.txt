@@ -7,3 +7,4 @@ datasets==2.7.0
 evaluate==0.3.0
 streamlit
 webvtt-py
+nltk==3.7
