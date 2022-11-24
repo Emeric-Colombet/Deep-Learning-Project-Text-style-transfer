@@ -125,14 +125,15 @@ class BaseData:
         self.df = df
 
     @classmethod
-    def _format_df_for_model(cls, df: pd.DataFrame, text_type=None) -> pd.DataFrame:
+    def format_df_for_model(cls, df: pd.DataFrame, text_type=None) -> pd.DataFrame:
         """Combines original and target texts if model input needs it to be that way
 
         :parameters:
             df: DataFrame containing original and target texts
 
         :returns:
-            text_type: 'combined' or None, states whether the texts should be combined or not
+            text_type: 'combined', 'encoded' or None, states whether the texts should be combined or not. If encoded, 
+            the function add tags <s> and <p>.
         """
         if text_type == 'combined':
 
@@ -143,6 +144,12 @@ class BaseData:
             df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                                          '>>>>' + \
                                          '<p>'
+        if text_type == 'encoded':
+
+            df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+                                         '>>>>' + \
+                                         '<p>'
+
 
         return df
 
@@ -165,7 +172,7 @@ class BaseData:
         COLUMNS_TO_DROP_LAST = ['title_terms']
 
         df = EuropeanSpanishTerms(self.df).count_regional_terms()
-        df = self._format_df_for_model(df, text_type=text_type)
+        df = self.format_df_for_model(df, text_type=text_type)
 
         """
         "y-label" based on title AND whether European Spanish terms were part of the target phrase
@@ -200,3 +207,35 @@ class BaseData:
             # d = d.drop_duplicates(inplace=True)  # Not working, not sure why
 
         return df_train, df_validation, df_test
+    @staticmethod
+    def utils_decode_model_output(text: list) -> list :
+        """ This function return a cleaned version of the output of the model prediction. 
+        - Remove the character `>>>><p>`
+        - Keep just the first proposition of the model because sometimes, 
+            the Transformers generate a second sentence with the <s> and <p> tags.
+        """
+        decoded_text = []
+        for sentence in text :
+            extracted_output = sentence.split('>>>><p>')
+            first_response = extracted_output[1].split('</p>')[0]
+            decoded_text.append(first_response)
+        return decoded_text
+    @staticmethod
+    def utils_from_str_to_pandas(list_char : str) -> pd.DataFrame :
+        """ This function take a big list of sentences where each sentence ends with ';' 
+
+        :parameters :
+            list_char : List of all our sentences in only one string. 
+    
+        :returns :
+            df_to_predict : A Dataframe who need to be encoded, and then feed into the model to predict
+
+        """
+        list_of_sentences = list_char.split(sep=";")
+        data = {
+            "text_latinamerica" : list_of_sentences
+        }
+        df_to_predict = pd.DataFrame(data=data)
+
+        return df_to_predict 
+
