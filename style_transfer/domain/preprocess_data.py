@@ -139,7 +139,10 @@ class BaseData:
             df['combined'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                              '>>>>' + \
                              '<p>' + df['text_spain'] + '</p>'
-            df.drop(columns=['text_latinamerica', 'text_spain'], inplace=True)
+
+            df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+                                         '>>>>' + \
+                                         '<p>'
 
         return df
 
@@ -165,7 +168,7 @@ class BaseData:
         df = self._format_df_for_model(df, text_type=text_type)
 
         """
-        "y-label" based on title and whether European Spanish terms were part of the target phrase
+        "y-label" based on title AND whether European Spanish terms were part of the target phrase
         in order to have test/train sets that have a similar distribution of shows/films (balanced way of speaking)
         and to have a similar amount of phrases where we are sure to have a regional difference between texts
         the "y-label" is not used for prediction necessarily but helps us distribute the data across data sets
