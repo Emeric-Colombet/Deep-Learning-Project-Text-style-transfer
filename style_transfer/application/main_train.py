@@ -20,12 +20,10 @@ df_train, df_validation, df_test = BaseData(df).split_train_test(
 
 logging.info("Data loaded")
 gpt = TransformerStyleTransferModel(
-    1,
-    model_name="Latino_to_European",
+    model_name="DeepESP/gpt2-spanish",
     tokenizer_name='DeepESP/gpt2-spanish',
-    batch_size=8,
     cache_dir='cache',
-    output_dir='Latino_to_European'
+    output_dir='models/Latino_to_European_GColab'
     )
-gpt.fit(df_train, df_validation)
+gpt.fit(df_train, df_validation,epochs=1,batch_size=8)
 logging.info("Model fitted")
