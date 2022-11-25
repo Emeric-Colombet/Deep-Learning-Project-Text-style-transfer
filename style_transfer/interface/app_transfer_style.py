@@ -22,7 +22,8 @@ class TransferStyleApp:
             encoded_text_to_submit = self._compute_text_preprocessing(text_to_submit)
             predictions,_ = self.model.predict(encoded_text_to_submit)
             self._display_prediction(predictions)
-            self._play_text_to_speech(predictions, region='spain', auto_play=True)
+            speech_format_prediction = self._from_list_of_words_to_string(predictions)
+            self._play_text_to_speech(speech_format_prediction, region='spain', auto_play=True)
 
     def transform_style(self, sentence):
         prediction = self.model.predict(sentence)
@@ -51,14 +52,15 @@ class TransferStyleApp:
 
         :submit : The button permitting to generate the prediction by feeding the model with input_sentences
         """
-        placeholder_latinamerica = '''Dios mío. ¿se quedó a dormir?
-            Skye, creo que esto está listo. bien
-            No tengo idea. no puedo lidiar... he estado en situaciones
-        '''
-        placeholder_spain = '''Madre mía, ¿se quedó a dormir?
-            Skye, creo que esto está listo. vale.
-            Yo qué coño sé. no puedo... a veces me ha pasado
-        '''
+
+        placeholder_latinamerica = "Pero qué descaro el de ese hombre. Bill nunca tuvo sentido común.;\n" \
+            "¡Trabaron la puerta! ¡Mierda! Vamos. Es solo un auto. ¡Agárrense de algo!;\n" \
+            "Si necesitan saber el nombre de alguien, solo preguntenme.;\n" \
+            "¡Cielos! Bueno, tontos. Ahora pueden encender sus teléfonos,;\n" \
+            "¿Se hicieron pasar por Tareq? Le arruinaron la vida a Ruqayya, ¿entienden?;\n" \
+            "Es un imbécil, y estoy harto de toda esta mierda vegana.;\n" \
+            "Genial. Perdón, ¿ese es el tipo del que hablas?;\n" \
+        
         text_to_submit = st.text_area(
             "Write here your Latino Spanish text, and we will transform it into European Spanish style! ¡Venga!",
             value=placeholder_latinamerica,
@@ -69,14 +71,20 @@ class TransferStyleApp:
         return submit, text_to_submit
 
        
-    @staticmethod
-    def _display_prediction(predictions="Output of our model"):
+    @classmethod
+    def _display_prediction(cls,predictions : str ="Output of our model"):
         st.subheader('Prediction :')
+        markdow_display = cls._from_list_of_words_to_string(predictions)
+        st.markdown(markdow_display)
+
+    @staticmethod
+    def _from_list_of_words_to_string(list_of_words:list) ->str : 
         markdow_display = ""
-        for sentence in predictions:
+        for sentence in list_of_words:
             new_line = f"{sentence}  \n"
             markdow_display += new_line
-        st.markdown(markdow_display)
+        return markdow_display
+
 
     @classmethod
     def _play_text_to_speech(cls, text: str, region='spain', auto_play=True):
@@ -88,7 +96,7 @@ class TransferStyleApp:
         """
 
         LANG = 'es'
-        TTS_FILE = 'text_to_speech_tmp.mp3'
+        TTS_FILE = 'data/text_to_speech_tmp.mp3'
 
         if region == 'spain':
             tld = 'es'
@@ -105,7 +113,7 @@ class TransferStyleApp:
             audio_bytes = audio_file.read()
             st.audio(audio_bytes, format='audio / ogg')
 
-        os.remove(TTS_FILE)
+        #os.remove(TTS_FILE)
 
     @classmethod
     def _play_audio_auto(cls, file_path: str):
