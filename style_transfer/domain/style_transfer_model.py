@@ -73,7 +73,7 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
 
 
     def fit(self,df_train : pd.DataFrame, df_eval : pd.DataFrame, epochs: int = 1, batch_size: int = 8) -> 'TransformerStyleTransferModel' :
-        trainer = self._build_trainer(df_train,df_eval,epochs)
+        trainer = self._build_trainer(df_train,df_eval,epochs,batch_size)
         train_result = trainer.train()
         logging.debug("Trained")
         #TODO : Log eval metrics too
