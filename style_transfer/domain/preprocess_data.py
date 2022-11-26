@@ -51,7 +51,7 @@ class EuropeanSpanishTerms:
 
         self.df = df
 
-    def count_regional_terms(self) -> pd.DataFrame:
+    def count_regional_terms(self, on_prediction=False) -> pd.DataFrame:
         """
         Count number of European Spanish terms for each phrase
 
@@ -64,6 +64,10 @@ class EuropeanSpanishTerms:
             r'\bguay\b', r'\bguai\b', r'\benhorabuena\b', r'\bmadre mía\b', r'\bhostia', r'\bjod',
             r'\bestupendo\b', r'\bcoñ', r'\bputada', r'\bjol[i,í]n', r'\bnarices', r'\bhala\b', r'\byo qué sé\b',
             r'\bla suda'
+
+            # Spanish sayings
+            r'\ba por\b', r'\bvenga\b', r'\bvale\b', r'\bperdona\b', r'\bno pasa nada\b', r'\banda\b',
+            r'\btela\b', r'\bpor saco\b'
 
             # Pronouns
             r'\bguarra\b', r'\bgilipolla', r'\bbuenorra\b', r'\bputa\b', r'\bzorra\b', r'\bnena\b',
@@ -78,16 +82,12 @@ class EuropeanSpanishTerms:
             r'\bgrifo', r'\bfrigo', r'\bordenador', r'\bcerilla', r'\bprisa',
 
             # Adjectives
-            r'\bmenudo\b', r'\bmona', r'\bmono\b', r'\bputo\b', r'\bguap', r'\bfatal\b', r'\bnato\b',
-            r'\bmogoll', r'\bcurra[n]{0,1}d', r'\blince', r'\bcutre'
+            r'\bmenudo\b', r'\bmona', r'\bmono', r'\bputo', r'\bguap', r'\bfatal', r'\bnato\b',
+            r'\bmogoll', r'\bcurra[n]{0,1}d', r'\blince', r'\bcutre', r'\bcachond'
 
             # Verbs
             r'\bapetec', r'\bpilla', r'\bapañ', r'\bmenear\b', r'\bmola', r'\bliga', r'\bflip', r'\bfoll',
             r'\blia', r'\brayan', r'\bpilla'
-
-            # Spanish sayings
-            r'\ba por\b', r'\bvenga\b', r'\bvale\b', r'\bperdona\b', r'\bno pasa nada\b', r'\banda\b',
-            r'\btela\b', r'\bpor saco\b'
 
             # Spanish conjugations
             r'\bos\b', r'aos\b', r'áos\b', r'ais\b', r'áis\b', r'eis\b', r'éis\b', r'idme\b', r'adme\b',
@@ -95,21 +95,93 @@ class EuropeanSpanishTerms:
 
             # Less known or less important
             r'\btres pueblos', r'\bfre(.*) espárrago', r'\bmosca', r'\bplanchar la oreja', r'\bsujeatavela'
-            r'\bcomer[a-z]{0,1}[e]{0,1} el tarro',
-            r'\bplomo', r'\bmorad', r'\ben vela\b', r'\bla pinza'
+            r'\bcomer[a-z]{0,1}[e]{0,1} el tarro', r'\bplomo', r'\bmorad', r'\ben vela\b', r'\bla pinza'
         ]
 
-        self.df['terms_spain_nb'] = 0
+        df = self.df.copy()
+
+        if on_prediction:
+            text_comparison = 'text_prediction'
+        else:
+            text_comparison = 'text_spain'
+
+        df['terms_spain_nb'] = 0
 
         for w in WORDS_TARGET:
-            self.df['terms_spain_nb'] = np.where(
-                (self.df['text_spain'].str.contains(w)) & ~(self.df['text_latinamerica'].str.contains(w)),
-                self.df['terms_spain_nb'] + 1,
-                self.df['terms_spain_nb'])
+            df['terms_spain_nb'] = np.where(
+                (df[text_comparison].str.contains(w)) & ~(df['text_latinamerica'].str.contains(w)),
+                df['terms_spain_nb'] + 1,
+                df['terms_spain_nb'])
 
-        self.df['terms_spain_flag'] = np.sign(self.df['terms_spain_nb'])
+        df['terms_spain_flag'] = np.sign(df['terms_spain_nb'])
 
-        return self.df
+        return df
+
+    def compare_predicted_regional_terms(self, prediction: pd.Series):
+        """
+        Counts number of European Spanish terms for the real European Spanish phrase and the prediction
+
+        :parameters:
+            prediction: Series with the prediction for text_latinamerica
+
+        :returns:
+            df: Dataframe with known regional terms (real or predicted)
+        """
+
+        self.df['text_prediction'] = prediction
+
+        df_real = self.count_regional_terms()
+        df_predicted = self.count_regional_terms(on_prediction=True)
+        df = self.df.copy()
+
+        df[['terms_spain_nb', 'terms_spain_flag']] = \
+            df_real[['terms_spain_nb', 'terms_spain_flag']]
+        df[['terms_spain_nb_predicted', 'terms_spain_flag_predicted']] = \
+            df_predicted[['terms_spain_nb', 'terms_spain_flag']]
+
+        return df
+
+    def calculate_sense_score(self, prediction: pd.Series) -> dict:
+        """
+        Sense checks if phrases with a regional difference between the Latinamerica and Spain texts
+        had a Spain term included in the prediction
+
+        :parameters:
+            prediction: Series with the prediction for text_latinamerica
+
+        :returns:
+            score: Dictionary with various score values
+            - regional_count:
+                out of all rows WITH a regional difference,
+                the share of rows with at least one regional term in the prediction
+
+            - regional_terms:
+                out of all rows WITH a regional difference, for all regional terms found in all rows,
+                the share of regional terms in the prediction
+
+            - nonregional_count:
+                out of all the rows with NO evident regional difference,
+                how many rows had a regional term show up in the prediction
+        """
+
+        df = self.compare_predicted_regional_terms(prediction)
+
+        expected_rows_regional = np.where(df['terms_spain_flag'] == 1, df['terms_spain_flag'], 0).sum()
+        expected_terms_regional = np.where(df['terms_spain_flag'] == 1, df['terms_spain_nb'], 0).sum()
+
+        predicted_rows_regional = np.where(df['terms_spain_flag'] == 1, df['terms_spain_flag_predicted'], 0).sum()
+        predicted_terms_regional = np.where(df['terms_spain_flag'] == 1, df['terms_spain_nb_predicted'], 0).sum()
+
+        expected_rows_nonregional = np.where(df['terms_spain_flag'] == 0, 1, 0).sum()
+        predicted_rows_nonregional = np.where(df['terms_spain_flag'] == 0, df['terms_spain_flag_predicted'], 0).sum()
+
+        score = {
+            'regional_count': predicted_rows_regional * 1.0 / expected_rows_regional,
+            'regional_terms': predicted_terms_regional * 1.0 / expected_terms_regional,
+            'nonregional_count': predicted_rows_nonregional * 1.0 / expected_rows_nonregional
+        }
+
+        return score
 
 
 class BaseData:
@@ -137,19 +209,15 @@ class BaseData:
         """
         if text_type == 'combined':
 
-            df['combined'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+            df['text_latinamerica_spain'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                              '>>>>' + \
                              '<p>' + df['text_spain'] + '</p>'
 
-            df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
-                                         '>>>>' + \
-                                         '<p>'
-        if text_type == 'encoded':
+        if text_type == 'combined' or text_type == 'encoded':
 
             df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                                          '>>>>' + \
                                          '<p>'
-
 
         return df
 
@@ -207,35 +275,36 @@ class BaseData:
             # d = d.drop_duplicates(inplace=True)  # Not working, not sure why
 
         return df_train, df_validation, df_test
+
     @staticmethod
-    def utils_decode_model_output(text: list) -> list :
+    def utils_decode_model_output(text: list) -> list:
         """ This function return a cleaned version of the output of the model prediction. 
         - Remove the character `>>>><p>`
         - Keep just the first proposition of the model because sometimes, 
             the Transformers generate a second sentence with the <s> and <p> tags.
         """
         decoded_text = []
-        for sentence in text :
+        for sentence in text:
             extracted_output = sentence.split('>>>><p>')
             first_response = extracted_output[1].split('</p>')[0]
             decoded_text.append(first_response)
         return decoded_text
+
     @staticmethod
-    def utils_from_str_to_pandas(list_char : str) -> pd.DataFrame :
+    def utils_from_str_to_pandas(list_char: str) -> pd.DataFrame:
         """ This function take a big list of sentences where each sentence ends with ';' 
 
-        :parameters :
+        :parameters:
             list_char : List of all our sentences in only one string. 
     
-        :returns :
+        :returns:
             df_to_predict : A Dataframe who need to be encoded, and then feed into the model to predict
 
         """
         list_of_sentences = list_char.split(sep=";")
         data = {
-            "text_latinamerica" : list_of_sentences
+            "text_latinamerica": list_of_sentences
         }
         df_to_predict = pd.DataFrame(data=data)
 
         return df_to_predict 
-
