@@ -8,7 +8,7 @@ df_train, df_validation, df_test = BaseData(df).split_train_test(
     random_state=42,
     text_type='combined')
 
-df_train_combined_only = df_train['text_latinamerica_spain']
+df_train_combined_only = df_train['encoded_latinamerica_spain']
 
 path = Subtitles.find_path('data')
 Subtitles.print_to_csv(df_train, path, 'df_train.csv')

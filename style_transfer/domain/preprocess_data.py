@@ -207,17 +207,16 @@ class BaseData:
             text_type: 'combined', 'encoded' or None, states whether the texts should be combined or not. If encoded, 
             the function add tags <s> and <p>.
         """
-        if text_type == 'combined':
-
-            df['text_latinamerica_spain'] = '<s>' + df['text_latinamerica'] + '</s>' + \
-                             '>>>>' + \
-                             '<p>' + df['text_spain'] + '</p>'
-
-        if text_type == 'combined' or text_type == 'encoded':
+        if text_type == 'encoded' or text_type == 'combined':
 
             df['encoded_latinamerica'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                                          '>>>>' + \
                                          '<p>'
+        if text_type == 'combined':
+
+            df['encoded_latinamerica_spain'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+                             '>>>>' + \
+                             '<p>' + df['text_spain'] + '</p>'
 
         return df
 
