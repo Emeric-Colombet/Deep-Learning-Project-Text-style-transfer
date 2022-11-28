@@ -137,7 +137,7 @@ class BaseData:
         """
         if text_type == 'combined':
 
-            df['combined'] = '<s>' + df['text_latinamerica'] + '</s>' + \
+            df['encoded_latinamerica_spain'] = '<s>' + df['text_latinamerica'] + '</s>' + \
                              '>>>>' + \
                              '<p>' + df['text_spain'] + '</p>'
 
