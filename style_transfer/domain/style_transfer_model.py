@@ -21,6 +21,7 @@ from typing import Tuple
 from dataclasses import dataclass 
 import json
 import pandas as pd
+import numpy as np
 
 class BaseStyleTransferModel:
     """
@@ -62,6 +63,7 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
             cache_dir : Dirname of the directory containing cache.
             output_dir : Dirname of thesaved model
         """
+        logging.debug("Loading model & tokenizer")
         self.model = AutoModelWithLMHead.from_pretrained(model_name)
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         if self.tokenizer.pad_token is None:
@@ -75,16 +77,18 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
     def fit(self,df_train : pd.DataFrame, df_eval : pd.DataFrame, epochs: int = 1, batch_size: int = 8) -> 'TransformerStyleTransferModel' :
         trainer = self._build_trainer(df_train,df_eval,epochs,batch_size)
         train_result = trainer.train()
+        evaluation = trainer.evaluate()
+        print(f"Evaluation : {evaluation}")
         logging.debug("Trained")
         #TODO : Log eval metrics too
         metrics = train_result.metrics
-        trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
+        trainer.save_metrics("eval",evaluation)
         trainer.save_model()
         return trainer
 
     def predict(self, df_to_predict: pd.DataFrame, compute_metric: Boolean = False) -> Tuple[list,dict] :
-        """     Make a prediction on the coming dataframe. This one must be have at least a column named encoded_latinamerica.
+        """     Make a prediction on the incoming dataframe. This one must be have at least a column named encoded_latinamerica.
         If the compute_metric argument is set to True, this function will try to compute the bleu metric. The column "text_spain" must exist.
         """ 
         tokenized_df_to_predict_encoded = self.tokenizer(df_to_predict["encoded_latinamerica"].to_list(),padding=True, return_tensors="pt")
@@ -108,16 +112,16 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
         bleu_score = google_bleu.compute(predictions=predictions, references=references)
         return bleu_score
 
-    def _build_trainer(self, df_train: pd.DataFrame, df_eval: pd.DataFrame, epochs : int, batch_size: int) -> 'TransformerStyleTransferModel':
+    def _build_trainer(self, df_train: pd.DataFrame, df_eval: pd.DataFrame, epochs : int, batch_size: int) -> Trainer:
         """Private method in order to build a trainer object. 
         """
-        logging.debug("Loading model & tokenizer")
+        
         data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=False)
         logging.debug("Loading text dataset")
         ds_train = Dataset.from_pandas(df_train,preserve_index=False) 
-        tokenized_training_dataset = ds_train.map(self._tokenize_function, batched=True)
+        tokenized_training_dataset = self._map_tokenizer_on_dataset(ds_train,'encoded_latinamerica_spain')
         ds_eval = Dataset.from_pandas(df_eval,preserve_index=False) 
-        tokenized_eval_dataset = ds_eval.map(self._tokenize_function, batched=True)
+        tokenized_eval_dataset = self._map_tokenizer_on_dataset(ds_eval,'encoded_latinamerica_spain')
         logging.debug("Loading Training arguments")
         training_args = TrainingArguments(
             output_dir = self.output_dir,
@@ -132,15 +136,31 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
             args = training_args,
             data_collator = data_collator,
             train_dataset = tokenized_training_dataset,
-            eval_dataset = tokenized_eval_dataset
+            eval_dataset = tokenized_eval_dataset,
         )
         logging.info("Everything loaded well")
         return trainer
-    def _tokenize_function(self,examples):
-        return self.tokenizer(examples["combined"], padding="max_length", max_length=512)
 
-    def _transpose (input_sentence,generator):
+
+    def _map_tokenizer_on_dataset(self, dataset: Dataset, column_name: str) -> Dataset:
+
+        """This function will implement a mapping on the Dataset, using a lambda function to select 
+        on which column it will compute the tokenization
+        
+        :parameters :
+            dataset : The dataset, it can be ds_train, ds_validation, ds_test
+            column_name : The column on which we want to compute tokenization. (Ex : 'encoded_latinamerica_spain', or 'encoded_latinamerica') 
+        
+        :returns : 
+            encoded_dataset : The dataset encoded. 
+
+        """
+        encoded_dataset = dataset.map(
+            lambda examples : self.tokenizer(examples[f"{column_name}"],padding="max_length", max_length=512),
+            batched=True)
+        return encoded_dataset
+
+    def _transpose (self,input_sentence,generator):
         raw_prediction = generator('<s>'+input_sentence + '</s>>>>><p>')
         clean_prediction = raw_prediction[0]['generated_text'].split('</s>>>>><p>')[1].split('</p>')[0]
         return clean_prediction
-    
