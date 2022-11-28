@@ -5,7 +5,7 @@ import pandas as pd
 
 model = TransformerStyleTransferModel(
     model_name="models/Latino_to_European_GColab",
-    tokenizer_name='flax-community/gpt-2-spanish'
+    tokenizer_name='DeepESP/gpt2-spanish'
     )
 app = TransferStyleApp(model)
 app.RUN()
