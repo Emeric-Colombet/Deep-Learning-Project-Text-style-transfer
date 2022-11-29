@@ -1,3 +1,8 @@
+"""
+Apply a sense check accounting for known European Spanish terms in the prediction
+To be used if a substantial list of predictions is available
+"""
+
 from style_transfer.infrastructure.style_transfer_data import StyleTransferData
 from style_transfer.domain.preprocess_data import EuropeanSpanishTerms, BaseData
 import pandas as pd
@@ -19,8 +24,8 @@ sense_score_validation = EuropeanSpanishTerms(df_validation).calculate_sense_sco
 sense_score_test = EuropeanSpanishTerms(df_test).calculate_sense_score(prediction_test)
 
 sense_scores = pd.DataFrame({
-    'df_train':pd.Series(sense_score_train),
-    'df_validation':pd.Series(sense_score_validation),
-    'df_test':pd.Series(sense_score_test)})
+    'df_train': pd.Series(sense_score_train),
+    'df_validation': pd.Series(sense_score_validation),
+    'df_test': pd.Series(sense_score_test)})
 
 print(sense_scores)
