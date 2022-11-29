@@ -3,12 +3,9 @@ import streamlit as st
 from gtts import gTTS
 import base64
 import os
-import pandas as pd
-import numpy as np
+
 from style_transfer.domain.style_transfer_model import TransformerStyleTransferModel
 from style_transfer.domain.preprocess_data import BaseData
-
-
 
 
 @dataclass
@@ -20,7 +17,7 @@ class TransferStyleApp:
         submit, text_to_submit = self._text_placeholder()
         if submit:
             encoded_text_to_submit = self._compute_text_preprocessing(text_to_submit)
-            predictions,_ = self.model.predict(encoded_text_to_submit)
+            predictions, _ = self.model.predict(encoded_text_to_submit)
             self._display_prediction(predictions)
             speech_format_prediction = self._from_list_of_words_to_string(predictions)
             self._play_text_to_speech(speech_format_prediction, region='spain', auto_play=True)
@@ -29,9 +26,9 @@ class TransferStyleApp:
         prediction = self.model.predict(sentence)
         return prediction
 
-    def _compute_text_preprocessing(self,text_to_submit):
+    def _compute_text_preprocessing(self, text_to_submit):
         pre_process_text_to_submit = BaseData.utils_from_str_to_pandas(text_to_submit)
-        encoded_text_to_submit = BaseData.format_df_for_model(pre_process_text_to_submit,text_type="encoded")
+        encoded_text_to_submit = BaseData.format_df_for_model(pre_process_text_to_submit, text_type="encoded")
         return encoded_text_to_submit
 
     @staticmethod
@@ -70,21 +67,19 @@ class TransferStyleApp:
         submit = st.button('Submit')
         return submit, text_to_submit
 
-       
     @classmethod
-    def _display_prediction(cls,predictions : str ="Output of our model"):
+    def _display_prediction(cls, predictions: str = "Output of our model"):
         st.subheader('Prediction :')
-        markdow_display = cls._from_list_of_words_to_string(predictions)
-        st.markdown(markdow_display)
+        markdown_display = cls._from_list_of_words_to_string(predictions)
+        st.markdown(markdown_display)
 
     @staticmethod
-    def _from_list_of_words_to_string(list_of_words:list) ->str : 
-        markdow_display = ""
+    def _from_list_of_words_to_string(list_of_words: list) -> str:
+        markdown_display = ""
         for sentence in list_of_words:
             new_line = f"{sentence}  \n"
-            markdow_display += new_line
-        return markdow_display
-
+            markdown_display += new_line
+        return markdown_display
 
     @classmethod
     def _play_text_to_speech(cls, text: str, region='spain', auto_play=True):
@@ -113,7 +108,7 @@ class TransferStyleApp:
             audio_bytes = audio_file.read()
             st.audio(audio_bytes, format='audio / ogg')
 
-        #os.remove(TTS_FILE)
+        os.remove(TTS_FILE)
 
     @classmethod
     def _play_audio_auto(cls, file_path: str):
@@ -129,6 +124,3 @@ class TransferStyleApp:
                 md,
                 unsafe_allow_html=True,
             )
-
-        
-
