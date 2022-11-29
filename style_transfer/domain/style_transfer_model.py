@@ -22,6 +22,7 @@ from dataclasses import dataclass
 import json
 import pandas as pd
 import numpy as np
+from tbparse import SummaryReader
 
 class BaseStyleTransferModel:
     """
@@ -164,3 +165,31 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
         raw_prediction = generator('<s>'+input_sentence + '</s>>>>><p>')
         clean_prediction = raw_prediction[0]['generated_text'].split('</s>>>>><p>')[1].split('</p>')[0]
         return clean_prediction
+    
+    #TODO : Faire de cette méthode une méthode normale qui utilise self.model_name/logs/ Bleu ou autre pour retrouver les datas.
+    @staticmethod
+    def retrieve_model_logs(path : str = "jupyter notebook/logs/Nov26_23-23-44_b8eb83221afe", method : str = "train/loss") -> pd.DataFrame :
+        """ This method accept a list of actions, and if ok retrieve model's logs  from given folder path
+        :parameters :
+            method : Can be `Bleu` or `train/loss`. `Bleu` retrieve model's Bleu score on Test dataset. 
+                        `train/loss` retrieve model's train/loss score from training and evaluating part. 
+        :returns : 
+            Dataframe containing information
+        """
+
+        acceptable_actions = ['Bleu','train/loss']
+        if method not in acceptable_actions : 
+            raise ValueError(f"Please provide an acceptable method. Not {str(method)}")
+        if method == "Bleu" :
+            logging.debug("Retrieving model's logs Bleu")
+            google_bleu_json_path = "models/Latino_to_European_GColab/logs/bleu_score_test_dataset.json"
+            with open(google_bleu_json_path) as f:
+                google_bleu_score = json.load(f)
+            return round(float(google_bleu_score["google_bleu"]),3)
+            
+        if method == "train/loss":
+            logging.debug("Retrieving model's logs train/loss")
+            reader = SummaryReader(path) 
+            all_log_dataframe = reader.scalars
+            train_by_loss = all_log_dataframe[all_log_dataframe["tag"].str.contains("train/loss")]
+            return train_by_loss
