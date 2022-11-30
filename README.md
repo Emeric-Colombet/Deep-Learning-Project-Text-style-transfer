@@ -16,8 +16,9 @@ Clone the project and create a virtual environment with all the dependencies.
     pip install -r requirements.txt
     . activate.sh
 ## Run Training:
-    
-    python3 style_transfer/application/main_train.py
+(The following command run a training for 1 epoch, it  take 2h per epochs)    
+    python3 style_transfer/application/main_train.py --epochs 1 -b 
+
 ## Run Application: 
     
     streamlit run style_transfer/application/Home_\ 👋.py
