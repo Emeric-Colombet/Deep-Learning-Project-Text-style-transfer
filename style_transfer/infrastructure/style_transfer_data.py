@@ -10,8 +10,6 @@ import math
 import git
 import os
 
-from style_transfer.domain.preprocess_data import BaseData
-
 
 @dataclass
 class MyRepo:
@@ -228,6 +226,7 @@ class Subtitles(MyRepo):
         """
         Remove rows with MY-SUB.co, Subtítulos por:, UNA SERIE ORIGINAL DE NETFLIX, etc
         """
+        # TODO: would be nice to remove them as they are not speech
         pass
 
     @classmethod
@@ -443,9 +442,3 @@ class StyleTransferData:
     """Class with base data for pre-processing"""
 
     data: pd.DataFrame = Subtitles.load_aggregated_data()
-    df_train, df_validation, df_test = BaseData(data).split_train_test(
-        test_size=0.15,
-        validation_size=0.2,
-        random_state=42,
-        text_type='combined'
-    )
