@@ -16,9 +16,17 @@ Clone the project and create a virtual environment with all the dependencies.
     pip install -r requirements.txt
     . activate.sh
 ## Run Training:
+### Run GPT2 training :
 (The following command run a training for 1 epoch, it  take 2h per epochs)    
     python3 style_transfer/application/main_train.py --epochs 1 -b 
-
+### Run Seq2Seq NN training : 
+    python3 style_transfer/application/main_inference_seq2seq.py
 ## Run Application: 
     
     streamlit run style_transfer/application/Home_\ 👋.py
+
+## N.B 
+    You can find in the models/logs :
+        - Output_model.csv : Predictions for the 500 first rows of the GPT2 Transformers
+        - bleu_score_test_dataset.json : The output of the bleu score calculation for those 500 first rows
+        - Latest_run.csv : The training loss logs of our model. (It was really difficult to calculate bleu score over the training steps with the Trainer object from Hugging Face.)
