@@ -81,7 +81,6 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
         evaluation = trainer.evaluate()
         print(f"Evaluation : {evaluation}")
         logging.debug("Trained")
-        #TODO : Log eval metrics too
         metrics = train_result.metrics
         trainer.save_metrics("train", metrics)
         trainer.save_metrics("eval",evaluation)
@@ -108,7 +107,6 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
         
     def _calculate_bleu_score(self,references : list, predictions : list) -> dict: 
         """ Take references list and prediction list, and compute the bleu metric"""
-        #TODO : Why not calculate perplexity? -> https://huggingface.co/docs/transformers/perplexity
         google_bleu = evaluate.load("google_bleu")
         bleu_score = google_bleu.compute(predictions=predictions, references=references)
         return bleu_score
@@ -137,7 +135,7 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
             args = training_args,
             data_collator = data_collator,
             train_dataset = tokenized_training_dataset,
-            eval_dataset = tokenized_eval_dataset,
+            eval_dataset = tokenized_eval_dataset
         )
         logging.info("Everything loaded well")
         return trainer
