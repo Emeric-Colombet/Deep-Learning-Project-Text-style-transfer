@@ -34,7 +34,7 @@ gpt = TransformerStyleTransferModel(
     model_name="DeepESP/gpt2-spanish",
     tokenizer_name='DeepESP/gpt2-spanish',
     cache_dir='cache',
-    output_dir='models/Latino_to_European_GColab'
+    output_dir='models/Latino_to_European'
     )
 gpt.fit(df_train, df_validation,epochs=1,batch_size=8)
 logging.info("Model fitted")

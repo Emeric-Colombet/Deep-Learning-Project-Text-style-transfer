@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
     )
 model = TransformerStyleTransferModel(
-    model_name="models/Latino_to_European_GColab",
+    model_name="models/Latino_to_European",
     tokenizer_name='DeepESP/gpt2-spanish'
     )
 app_transfer_style = TransferStyleApp(model)
