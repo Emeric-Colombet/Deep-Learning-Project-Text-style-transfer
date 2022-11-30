@@ -7,8 +7,6 @@ from style_transfer.domain.style_transfer_model import TransformerStyleTransferM
 
 
 
-
-
 @dataclass
 class AppModelMonitor:
     model: TransformerStyleTransferModel
@@ -25,8 +23,8 @@ class AppModelMonitor:
     
     def _build_log_line_plot(self):
         train_by_loss_dataframe = TransformerStyleTransferModel.retrieve_model_logs()
-        x_axis = train_by_loss_dataframe["step"]
-        y_axis = train_by_loss_dataframe["value"]
+        x_axis = train_by_loss_dataframe["Step"]
+        y_axis = train_by_loss_dataframe["Training Loss"]
         legend = "train/loss"
         fig = go.Figure()
         # Create and style traces

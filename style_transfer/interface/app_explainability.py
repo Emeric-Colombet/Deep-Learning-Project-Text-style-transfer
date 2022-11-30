@@ -13,7 +13,7 @@ class ExplainabilityApp:
 
     def __init__(self):
 
-        self.model = AutoModelWithLMHead.from_pretrained("models/Latino_to_European_GColab", output_attentions = True)
+        self.model = AutoModelWithLMHead.from_pretrained("models/Latino_to_European", output_attentions = True)
         self.tokenizer = AutoTokenizer.from_pretrained('DeepESP/gpt2-spanish')
     
 

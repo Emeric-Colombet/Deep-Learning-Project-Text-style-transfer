@@ -11,8 +11,6 @@ st.image('assets/hola.jpeg')
 
 st.write("# Welcome to the Spanish Style Transfer App! 👋")
 
-st.sidebar.success("Select a demo above.")
-
 st.markdown(
 """
 ##### Our goal is to turn the neutral style of Latin-American Spanish text into the style of European Spanish.
