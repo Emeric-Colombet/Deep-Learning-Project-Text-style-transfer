@@ -7,8 +7,6 @@ from style_transfer.domain.style_transfer_model import TransformerStyleTransferM
 
 
 
-
-
 @dataclass
 class AppModelMonitor:
     model: TransformerStyleTransferModel
