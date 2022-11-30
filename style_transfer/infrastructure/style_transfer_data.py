@@ -1,5 +1,5 @@
 """This module loads subtitles data used in style transfer project """
-
+import csv
 from dataclasses import dataclass
 import pandas as pd
 import numpy as np
@@ -9,6 +9,8 @@ import datetime
 import math
 import git
 import os
+
+from style_transfer.domain.preprocess_data import BaseData
 
 
 @dataclass
@@ -376,7 +378,7 @@ class Subtitles(MyRepo):
         return df
 
     @classmethod
-    def print_to_csv(cls, df: pd.DataFrame, path: str, file_name: str, index=False) -> None:
+    def print_to_csv(cls, df: pd.DataFrame, path: str, file_name: str, index: bool = False) -> None:
         """
         Export DataFrame to a CSV file
 
@@ -385,9 +387,13 @@ class Subtitles(MyRepo):
             path: Path where file will be stored
             file_name: Name of file (including extension such as '.csv')
         """
-
         full_path = os.path.join(path, file_name)
-        df.to_csv(full_path, index=index, encoding='utf-8-sig')
+
+        if file_name.endswith('.txt'):
+            # OPTIMIZE: Used for a one-column txt file, and not multiple columns with line breaks in between
+            df.to_csv(full_path, index=index, encoding='utf-8-sig', header=False, quoting=csv.QUOTE_NONE, sep='\n')
+        else:
+            df.to_csv(full_path, index=index, encoding='utf-8-sig')
 
         print(f'Export done: {full_path}')
 
@@ -433,7 +439,13 @@ class Subtitles(MyRepo):
 
 
 @dataclass
-class StyleTransferData(Subtitles):
+class StyleTransferData:
     """Class with base data for pre-processing"""
 
     data: pd.DataFrame = Subtitles.load_aggregated_data()
+    df_train, df_validation, df_test = BaseData(data).split_train_test(
+        test_size=0.15,
+        validation_size=0.2,
+        random_state=42,
+        text_type='combined'
+    )

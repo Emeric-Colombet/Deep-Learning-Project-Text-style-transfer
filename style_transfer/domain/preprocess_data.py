@@ -52,15 +52,26 @@ class EuropeanSpanishTerms:
 
         self.df = df
 
-    def count_regional_terms(self, on_prediction=False) -> pd.DataFrame:
+    def count_regional_terms(self, on_prediction: bool = False, word_group: str = None) -> pd.DataFrame:
         """
         Count number of European Spanish terms for each phrase
+
+        :parameters:
+            on_prediction:
+                if True, compares predicted text to original text
+                if False, compares Spain text to Latinamerica text
+
+            word_group:
+                if 'latest', the terms will be based on the latest list of terms to be searched
+                else, the terms will be based on an initial list of terms
+                since the train/validation/test split keeps a similar ratio of phrases with regional terms,
+                in order to keep the same rows in the different datasets, the word list cannot be updated
 
         :returns:
             df: DataFrame with European Spanish terms count
         """
 
-        WORDS_TARGET = [
+        WORDS_TARGET_INITIAL = [
             # Exclamations
             r'\bguay\b', r'\bguai\b', r'\benhorabuena\b', r'\bmadre mía\b', r'\bhostia', r'\bjod',
             r'\bestupendo\b', r'\bcoñ', r'\bputada', r'\bjol[i,í]n', r'\bnarices', r'\bhala\b', r'\byo qué sé\b',
@@ -99,6 +110,46 @@ class EuropeanSpanishTerms:
             r'\bcomer[a-z]{0,1}[e]{0,1} el tarro', r'\bplomo', r'\bmorad', r'\ben vela\b', r'\bla pinza'
         ]
 
+        WORDS_TARGET_LATEST = [
+            # Exclamations
+            r'\bguay\b', r'\bguai\b', r'\benhorabuena\b', r'\bmadre mía\b', r'\bhostia', r'\bjod',
+            r'\bestupendo\b', r'\bcoñ', r'\bputada', r'\bjol[i,í]n', r'\bnarices', r'\bhala\b', r'\byo qué sé\b',
+            r'\bla suda'
+
+            # Spanish sayings
+            r'\ba por\b', r'\bvenga\b', r'\bvale\b', r'\bperdona\b', r'\bno pasa nada\b', r'\banda\b',
+            r'\btela\b', r'\bpor saco\b', r'\bda igual\b',
+
+            # Pronouns
+            r'\bguarra\b', r'\bgilipolla', r'\bbuenorra\b', r'\bputa\b', r'\bzorra\b', r'\bnena\b',
+            r'\btí[a,o][s]{0,1}\b', r'\bchaval', r'\bcotill', r'\bcapullo', r'\bcrack',
+
+            # Nouns
+            r'\bmóvil', r'\bcoche', r'\baparca', r'\bcamarer', r'\bcaña', r'\bpiso', r'\bpolla',
+            r'\bservicios\b', r'\btorti', r'\bpolvo\b', r'\bleche\b', r'\brollo', r'\bporr', r'\bchasco',
+            r'váter', r'\bpasta\b', r'\bpóliza', r'coj[o,ó]n', r'\blí[o,a]', r'\bfollón', r'\bcacahuete',
+            r'\bloro', r'\bcoco', r'\bmorro', r'\bplantón', r'\blavabo', r'\bsujetador', r'\bmaletero',
+            r'\bfontanero', r'\bzumo', r'\bcuerno', r'\btorta', r'\bcalcet', r'\bbraga', r'\bgafa', r'\bbañera',
+            r'\bgrifo', r'\bfrigo', r'\bordenador', r'\bcerilla', r'\bprisa', r'\bchupito', r'\brabo', r'\bguateque',
+
+            # Adjectives
+            r'\bmenudo\b', r'\bmona', r'\bmono', r'\bputo', r'\bguap', r'\bfatal', r'\bnato\b',
+            r'\bmogoll', r'\bcurra[n]{0,1}d', r'\blince', r'\bcutre', r'\bcachond', r'\bmaj', r'\bchung',
+            r'\benfarolad',
+
+            # Verbs
+            r'\bapetec', r'\bpilla', r'\bapañ', r'\bmenear\b', r'\bmola', r'\bliga', r'\bflip', r'\bfoll',
+            r'\blia', r'\brayan', r'\bpilla', r'\bquedar\b', r'\bpelar\b',
+
+            # Spanish conjugations
+            r'\bos\b', r'aos\b', r'áos\b', r'ais\b', r'áis\b', r'eis\b', r'éis\b', r'idme\b', r'adme\b',
+            r'ead\b', r'\bvuestr',
+
+            # Less known or less important
+            r'\btres pueblos', r'\bfre(.*) espárrago', r'\bmosca', r'\bplanchar la oreja', r'\bsujeatavela'
+            r'\bcomer[a-z]{0,1}[e]{0,1} el tarro', r'\bplomo', r'\bmorad', r'\ben vela\b', r'\bla pinza'
+        ]
+
         df = self.df.copy()
 
         if on_prediction:
@@ -108,7 +159,12 @@ class EuropeanSpanishTerms:
 
         df['terms_spain_nb'] = 0
 
-        for w in WORDS_TARGET:
+        if word_group == 'latest':
+            words = WORDS_TARGET_LATEST
+        else:
+            words = WORDS_TARGET_INITIAL
+
+        for w in words:
             df['terms_spain_nb'] = np.where(
                 (df[text_comparison].str.contains(w)) & ~(df['text_latinamerica'].str.contains(w)),
                 df['terms_spain_nb'] + 1,
@@ -132,7 +188,7 @@ class EuropeanSpanishTerms:
         self.df['text_prediction'] = prediction
 
         df_real = self.count_regional_terms()
-        df_predicted = self.count_regional_terms(on_prediction=True)
+        df_predicted = self.count_regional_terms(on_prediction=True, word_group='latest')
         df = self.df.copy()
 
         df[['terms_spain_nb', 'terms_spain_flag']] = \

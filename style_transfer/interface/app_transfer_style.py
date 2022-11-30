@@ -44,25 +44,49 @@ class TransferStyleApp:
     
     @staticmethod
     def _text_placeholder():
-        """ This fonction summurize the first part of our application :
-        :text_submission : The area where the user can write all the sentences in Latinamerica style
+        """This function summarizes the first part of our application
 
-        :submit : The button permitting to generate the prediction by feeding the model with input_sentences
+        :returns:
+            submit: The button permitting to generate the prediction by feeding the model with input_sentences
+            text_to_submit: Latinamerica test to transfer style
         """
-
-        placeholder_latinamerica = "Pero qué descaro el de ese hombre. Bill nunca tuvo sentido común.;\n" \
-            "¡Trabaron la puerta! ¡Mierda! Vamos. Es solo un auto. ¡Agárrense de algo!;\n" \
-            "Si necesitan saber el nombre de alguien, solo preguntenme.;\n" \
-            "¡Cielos! Bueno, tontos. Ahora pueden encender sus teléfonos,;\n" \
-            "¿Se hicieron pasar por Tareq? Le arruinaron la vida a Ruqayya, ¿entienden?;\n" \
-            "Es un imbécil, y estoy harto de toda esta mierda vegana.;\n" \
-            "Genial. Perdón, ¿ese es el tipo del que hablas?;\n" \
+        option = st.selectbox(
+            'Choose a phrase in Latin-American style to get started and we will transform it into European Spanish style!',
+            (
+            'El valor no significa una mierda a menos que tengas el valor de enfrentar al que se porte como un imbécil.',
+            'Y buenas noches, huéspedes. Deben estar muy mal y deben extrañar mucho a sus padres.',
+            'Espera, no. ¿Qué pasó? Entré a la habitación equivocada.',
+            'Buen trabajo. Estuvo bien. Eso fue una locura. ¿No lo fue?',
+            'Es estupendo, apuesto, y todos lo aman. Cuando se va a su casa,  te enteras de que está casado.',
+            'Se ve estupendo. Lo están entendiendo. Genial. Vamos a las caídas de espalda.',
+            '¡Jódete! ¡Jódete! ¡No me importa un carajo lo que estoy tocando!',
+            '"Bash", por favor. Para que sepan, los cheques vienen de él, así que sean amables.',
+            '¿Muchos nombres? ¿Con quién estuve compartiendo mi cama?',
+            'Linda. Te vio hacer eso.',
+            'Es buena en su trabajo. El punto es que Antoine era un cliente joven y atractivo,',
+            'Qué rico. ¿Dónde tenías escondido a este chico tan lindo?',
+            'Chicas, vengan. ¡Vamos! ¡Se ve estupenda!',
+            'Genial. Es bonita. Digo...',
+            'Está bien. Me preocupa que ustedes dos vivan solas aquí.',
+            '¡Dios, estás embarazada! Cálmate.',
+            'Está bien. Quizás tengan razón.',
+            '¿Pensaron que podían agarrarme? ¡Haría falta un ejército!',
+            'Me acaban de robar, así que quiero las mejores cámaras que tengan.',
+            '¿Ya están bebiendo? ¡Sí!',
+            'Pero qué descaro el de ese hombre. Bill nunca tuvo sentido común.',
+            '¡Trabaron la puerta! ¡Mierda! Vamos. Es solo un auto. ¡Agárrense de algo!',
+            'Si necesitan saber el nombre de alguien, solo preguntenme.',
+            '¡Cielos! Bueno, tontos. Ahora pueden encender sus teléfonos,',
+            '¿Se hicieron pasar por Tareq? Le arruinaron la vida a Ruqayya, ¿entienden?',
+            'Es un imbécil, y estoy harto de toda esta mierda vegana.',
+            'Genial. Perdón, ¿ese es el tipo del que hablas?'
+            ))
         
         text_to_submit = st.text_area(
-            "Write here your Latino Spanish text, and we will transform it into European Spanish style! ¡Venga!",
-            value=placeholder_latinamerica,
+            "...or you can also write your own below, ¡venga!:",
+            value=option,
             height=200,
-            help="If you want to separate sentences uses ';' symbol."
+            help="If you are including separate statements, please use the ';' symbol to separate them."
         )
         submit = st.button('Submit')
         return submit, text_to_submit
@@ -102,7 +126,7 @@ class TransferStyleApp:
         tts.save(TTS_FILE)
 
         if auto_play:
-            cls._play_audio_auto(TTS_FILE)
+            cls._autoplay_audio(TTS_FILE)
         else:
             audio_file = open(TTS_FILE, 'rb')
             audio_bytes = audio_file.read()
@@ -111,7 +135,7 @@ class TransferStyleApp:
         os.remove(TTS_FILE)
 
     @classmethod
-    def _play_audio_auto(cls, file_path: str):
+    def _autoplay_audio(cls, file_path: str):
         with open(file_path, "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
