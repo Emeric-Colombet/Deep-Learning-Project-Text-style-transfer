@@ -9,13 +9,6 @@ st.set_page_config(
     layout="wide"
     )
 
-#model = TransformerStyleTransferModel(
-#    model_name="models/Latino_to_European_GColab",
-#    tokenizer_name='DeepESP/gpt2-spanish'
-#    )
-
-#model = model.model
-#tokenizer = model.tokenizer
 
 app_explainability = ExplainabilityApp()
 app_explainability.RUN()
