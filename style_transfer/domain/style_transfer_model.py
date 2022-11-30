@@ -19,6 +19,7 @@ from xmlrpc.client import Boolean
 import os 
 from typing import Tuple
 from dataclasses import dataclass 
+import tensorflow as tf
 import json
 import pandas as pd
 import numpy as np
@@ -191,3 +192,175 @@ class TransformerStyleTransferModel(BaseStyleTransferModel):
             all_log_dataframe = reader.scalars
             train_by_loss = all_log_dataframe[all_log_dataframe["tag"].str.contains("train/loss")]
             return train_by_loss
+
+
+class Seq2seqStyleTransferModel:
+
+    def __init__(self, vocab_size = 30000, max_length = 150,
+                 embed_size = 300, output_dir = "models/my_model"):
+        
+        """ Constructor of initialized class 
+        
+        :parameters:
+            vocab_size : Number of words/tokens in our dictionary. 
+            max_length : Maximal length of sentences fed in the model.
+            embed_size : Embedding matrix size.
+            output_dir : Dirname of the saved model
+        """
+
+        self.vocab_size = vocab_size
+        self.max_length = max_length
+        self.embed_size = embed_size
+        self.output_dir = output_dir
+
+
+    def model_architecture(self, df_cleaned : pd.DataFrame, df_train, df_validation):
+        """ Function establishing the model architecture of our seq2seq with attention
+
+        :parameter:
+            df_cleaned : Preprocessed DataFrame containing equivalent sentences
+                         between latin american spanish and european spanish
+            df_train : Train Split of DataFrame
+            df_validation : Validation Split of DataFrame
+        :return:
+            model : model containing the model architecture
+            X_train: Tensor object of the latin american sentences 
+                     for training to input in encoder layer
+            X_train_dec: Tensor object of the euro spanish sentences
+                         for training to input in decoder layer
+            X_valid: Tensor object of the latin american sentences 
+                     for validation to input in encoder layer
+            X_valid_dec: Tensor object of the euro spanish sentences
+                         for validation to input in decoder layer
+            y_train: Target european spanish sentences for training
+            y_valid: Target european spanish sentences for validation
+        
+        """
+
+        #TextVectorization layers that apply a lowercase standardization
+        #And Text Tokenization
+        text_vec_layer_lat = tf.keras.layers.TextVectorization(self.vocab_size,\
+                                         output_sequence_length = self.max_length,\
+                                         standardize = "lower")
+        text_vec_layer_es = tf.keras.layers.TextVectorization(self.vocab_size,\
+                                         output_sequence_length = self.max_length,\
+                                             standardize = "lower")
+        text_vec_layer_lat.adapt(df_cleaned["text_latinamerica"])
+        text_vec_layer_es.adapt([f"startofseq {s} endofseq" for s in df_cleaned["text_spain"]])
+
+        #Creating Tensor constant objects from our split dataset
+        X_train = tf.constant(df_train["text_latinamerica"])
+        X_valid = tf.constant(df_validation["text_latinamerica"])
+        X_train_dec = tf.constant([f"startofseq {s}" for s in df_train["text_spain"]])
+        X_valid_dec = tf.constant([f"startofseq {s}" for s in df_validation["text_spain"]])
+        
+        y_train = text_vec_layer_es([f"{s} endofseq" for s in df_train["text_spain"]])
+        y_valid = text_vec_layer_es([f"{s} endofseq" for s in df_validation["text_spain"]])
+
+
+        #Encoder - Decoder Embeddings layers
+        encoder_inputs = tf.keras.layers.Input(shape = [], dtype = tf.string)
+        decoder_inputs = tf.keras.layers.Input(shape = [], dtype = tf.string)
+
+        encoder_input_ids = text_vec_layer_lat(encoder_inputs)
+        decoder_input_ids = text_vec_layer_es(decoder_inputs)
+        encoder_embedding_layer = tf.keras.layers.Embedding(self.vocab_size, self.embed_size,
+                                                    mask_zero=True, 
+                                                    embeddings_initializer = "glorot_uniform")
+        decoder_embedding_layer = tf.keras.layers.Embedding(self.vocab_size, self.embed_size,
+                                                    mask_zero=True, 
+                                                    embeddings_initializer = "glorot_uniform")
+        encoder_embeddings = encoder_embedding_layer(encoder_input_ids)
+        decoder_embeddings = decoder_embedding_layer(decoder_input_ids)
+
+        #Encoder : Bidirectional LSTM Layer
+        tf.random.set_seed(42)  
+        encoder = tf.keras.layers.Bidirectional(
+        tf.keras.layers.LSTM(512, return_sequences=True, return_state=True, dropout = 0.1))
+
+        encoder_outputs, *encoder_state = encoder(encoder_embeddings)
+        encoder_state = [tf.concat(encoder_state[::2], axis=-1),  
+                 tf.concat(encoder_state[1::2], axis=-1)]  
+
+        #Decoder : LSTM Layer
+        decoder = tf.keras.layers.LSTM(1024, return_sequences=True, dropout =0.1)
+        decoder_outputs = decoder(decoder_embeddings, initial_state=encoder_state)
+        
+        #Attention Layer applied on the decoder-encoder outputs
+        attention_layer = tf.keras.layers.Attention()
+        attention_outputs = attention_layer([decoder_outputs, encoder_outputs])
+
+        #Output Layer is a Dense one
+        output_layer = tf.keras.layers.Dense(self.vocab_size, activation="softmax")
+        Y_proba = output_layer(attention_outputs)
+
+        model = tf.keras.Model(inputs=[encoder_inputs, decoder_inputs],
+                       outputs=[Y_proba])
+
+        return model, X_train, X_train_dec, X_valid, X_valid_dec, y_train, y_valid
+
+    def fit(self, model, X_train, X_train_dec, X_valid, X_valid_dec, y_train, y_valid):
+        """ Fit method
+        :parameters:
+            model: model containing the model architecture
+            X_train: Tensor object of the latin american sentences 
+                     for training to input in encoder layer
+            X_train_dec: Tensor object of the euro spanish sentences
+                         for training to input in decoder layer
+            X_valid: Tensor object of the latin american sentences 
+                     for validation to input in encoder layer
+            X_valid_dec: Tensor object of the euro spanish sentences
+                         for validation to input in decoder layer
+            y_train: Target european spanish sentences for training
+            y_valid: Target european spanish sentences for validation
+        :return:
+            model: fitted model
+
+        """
+        
+        opt = tf.keras.optimizers.Nadam(learning_rate=0.001)
+        model.compile(loss="sparse_categorical_crossentropy", optimizer=opt,
+                     metrics=["accuracy"])
+        model.fit((X_train, X_train_dec), y_train, epochs=10,
+                    validation_data=((X_valid, X_valid_dec), y_valid))
+            
+        model.save(self.output_dir)
+
+        return model
+
+    def _load_model(self):
+        """Hidden method to load the saved model from output directory
+        """
+        model = tf.keras.models.load_model(self.output_dir)
+        model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam",
+                      metrics=["accuracy"])
+       
+        return model
+
+
+    def translate(self,sentence_lat):
+        """Translate method to decode the output given by the model
+        
+        :parameters:
+            sentence_lat: sentence in latin american to feed in the model
+                          to convert to an european spanish sentence
+        :return:
+            translation: sentence in european spanish deducted by the encoder-decoder model
+        
+        """
+
+        model = self._load_model()
+
+        translation = ""
+        for word_idx in range(self.max_length):
+            X = np.array([sentence_lat]) #encoder input
+            X_dec = np.array(["startofseq " + translation]) #decoder input
+            y_proba = model.predict((X, X_dec))[0, word_idx] #last token's probas
+            predicted_word_id = np.argmax(y_proba)
+            #4th index is corresponding to the text_vec_layer_es Layer
+            predicted_word = model.layers[4].get_vocabulary()[predicted_word_id]
+            if predicted_word == "endofseq":
+                break
+        translation += " " + predicted_word
+        return translation
+    

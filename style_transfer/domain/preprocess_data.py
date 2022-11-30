@@ -1,6 +1,7 @@
 """This module loads the preprocessing object """
 from sklearn.model_selection import StratifiedShuffleSplit
-
+from unidecode import unidecode
+import string
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -316,3 +317,36 @@ class BaseData:
         df_to_predict = pd.DataFrame(data=data)
 
         return df_to_predict 
+
+    def strip_accent_punctuation(self):
+        """Function used to preprocess the data feeding the seq2seq model
+           that removes accent and punctuation.
+
+            :return:
+                df_cleaned: Preprocessed DataFrame containing equivalent sentences
+                            between latin american spanish and european spanish 
+                df_train: Train Split of DataFrame
+                df_validation: Validation Split of DataFrame
+                df_test: Test Split of DataFrame
+
+        """
+
+        df_train, df_validation, df_test = self.split_train_test()
+
+        df_train["text_spain"] = df_train["text_spain"].apply(unidecode)
+        df_train["text_latinamerica"] = df_train["text_latinamerica"].apply(unidecode)
+        df_validation["text_spain"] = df_validation["text_spain"].apply(unidecode)
+        df_validation["text_latinamerica"] = df_validation["text_latinamerica"].apply(unidecode)
+        df_test["text_spain"] = df_test["text_spain"].apply(unidecode)
+        df_test["text_latinamerica"] = df_test["text_latinamerica"].apply(unidecode)
+
+        df_train["text_spain"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_train["text_spain"]]
+        df_train["text_latinamerica"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_train["text_latinamerica"]]
+        df_validation["text_spain"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_validation["text_spain"]]
+        df_validation["text_latinamerica"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_validation["text_latinamerica"]]
+        df_test["text_spain"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_test["text_spain"]]
+        df_test["text_latinamerica"] =[e.translate(str.maketrans("", "", string.punctuation)) for e in df_test["text_latinamerica"]]
+
+        df_cleaned = pd.concat([df_train, df_validation, df_test])
+
+        return df_cleaned, df_train, df_validation, df_test
