@@ -6,7 +6,7 @@ from style_transfer.infrastructure.style_transfer_data import Subtitles
 from style_transfer.domain.preprocess_data import EuropeanSpanishTerms
 import pandas as pd
 
-path = Subtitles.find_path('models/output_model.csv')
+path = Subtitles.find_path('models/logs/Output_model.csv')
 predicted_data = pd.read_csv(path)
 predictions = predicted_data['text_prediction']
 data = predicted_data.drop(['text_prediction'], axis=1)
