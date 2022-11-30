@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from unidecode import unidecode
 import streamlit as st
 from gtts import gTTS
+import pandas as pd
 import base64
 import os
 
@@ -21,6 +23,10 @@ class TransferStyleApp:
             self._display_prediction(predictions)
             speech_format_prediction = self._from_list_of_words_to_string(predictions)
             self._play_text_to_speech(speech_format_prediction, region='spain', auto_play=True)
+            liste_ =list()
+            liste_.append(unidecode(text_to_submit))
+            with open("data/input_text.txt", 'w') as file:
+                file.write(liste_[0])
 
     def transform_style(self, sentence):
         prediction = self.model.predict(sentence)
