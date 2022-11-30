@@ -2,7 +2,8 @@
 
 This project aims to transform a Latina Spanish text in the style of European Spanish. 
 
-
+# Download Style Transfer Model 
+If you want to get the files of the trained model, please send a mail to emeric.colombet@2020.icam.fr and put it in `models/Latino_to_European`
 
 ## Installation
 
@@ -19,4 +20,4 @@ Clone the project and create a virtual environment with all the dependencies.
     python3 style_transfer/application/main_train.py
 ## Run Application: 
     
-    streamlit run style_transfer/application/main_inference.py 
+    streamlit run style_transfer/application/Home_\ 👋.py
