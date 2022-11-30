@@ -4,7 +4,6 @@ This project aims to transform a Latina Spanish text in the style of European Sp
 
 # Download Style Transfer Model 
 If you want to get the files of the trained model, please send a mail to emeric.colombet@2020.icam.fr and put it in `models/Latino_to_European`
-
 ## Installation
 
 Clone the project and create a virtual environment with all the dependencies.
