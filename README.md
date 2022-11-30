@@ -1,6 +1,6 @@
 # Text Style Transfer Salima Stephanie Emeric
 
-This project aim to transform a Latina Spanish text in the style of European Spanish. 
+This project aims to transform a Latina Spanish text in the style of European Spanish. 
 
 
 
@@ -13,10 +13,10 @@ Clone the project and create a virtual environment with all the dependencies.
     python3 -m venv .style_transfer_env
     source .style_transfer_env/bin/activate
     pip install -r requirements.txt
-
-## Run Training:
     . activate.sh
+## Run Training:
+    
     python3 style_transfer/application/main_train.py
 ## Run Application: 
-    . activate.sh
+    
     streamlit run style_transfer/application/main_inference.py 
