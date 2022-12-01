@@ -66,7 +66,7 @@ class ExplainabilityApp:
         with open("assets/model_view.html", "r") as file:
             html_string = file.read()
         st.caption("Model Attention View")
-        st.components.v1.html(html_string, height = 1500, width = 1000)
+        st.components.v1.html(html_string, height=1800, width=1000)
 
 
     
